@@ -56,8 +56,8 @@
 
   <!-- n=3 content -->
   <div id="section3" style="display:none">
-    <p class="page-subtitle">
-      1000×1000×50 grid · \(\theta_1,\theta_2,\theta_3 \in [0,\,2\pi]\) · color = LCE ·
+    <p class="page-subtitle" id="subtitle3">
+      \(\theta_1,\theta_2,\theta_3 \in [0,\,2\pi]\) · color = LCE ·
       <strong>drag θ₃ slider · click to simulate</strong>
     </p>
     <div id="loadingMsg3" class="notice">Loading triple pendulum heatmap…</div>
@@ -283,7 +283,7 @@
     if (n3loaded) return;
     n3loaded = true;
 
-    const BIN_URL = 'data/pendulum_heatmap_n3_1000x1000x50.bin';
+    const BIN_URL = 'data/pendulum_heatmap_n3_200x200x50.bin';
     let n3data;
     try {
       n3data = await loadBin3D(BIN_URL);
@@ -295,6 +295,9 @@
     const { nSlices, rows, cols, data } = n3data;
     document.getElementById('loadingMsg3').style.display = 'none';
     document.getElementById('heatmapSection3').style.display = 'block';
+    document.getElementById('subtitle3').innerHTML =
+      `${rows}×${cols}×${nSlices} grid &middot; \\(\\theta_1,\\theta_2,\\theta_3 \\in [0,\\,2\\pi]\\) &middot; color = LCE &middot; ` +
+      `<strong>drag &theta;&#8323; slider &middot; click to simulate</strong>`;
 
     // Colour scale from full dataset
     const pos  = Array.from(data).filter(v => v > 0).sort((a,b) => a-b);
