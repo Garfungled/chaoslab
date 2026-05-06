@@ -37,13 +37,36 @@
 </div></div>
 
 <div class="page-wrapper">
-  <h1 class="page-title">Double Pendulum LCE Heatmap</h1>
-  <p class="page-subtitle">
-    1000×1000 grid · \(\theta_1, \theta_2 \in [0,\,2\pi]\) · color = LCE ·
-    <strong>click to simulate · scroll to zoom · drag to pan · double-click to reset view</strong>
-  </p>
+  <h1 class="page-title">Pendulum LCE Heatmap</h1>
 
-  <div id="loadingMsg" class="notice">Loading heatmap data…</div>
+  <!-- n selector -->
+  <div class="btn-row" style="justify-content:center;margin-bottom:1rem">
+    <button class="btn-primary"   id="btnN2">n = 2 — Double</button>
+    <button class="btn-secondary" id="btnN3">n = 3 — Triple</button>
+  </div>
+
+  <!-- n=2 content -->
+  <div id="section2">
+    <p class="page-subtitle">
+      1000×1000 grid · \(\theta_1, \theta_2 \in [0,\,2\pi]\) · color = LCE ·
+      <strong>click to simulate · scroll to zoom · drag to pan · double-click to reset view</strong>
+    </p>
+    <div id="loadingMsg" class="notice">Loading heatmap data…</div>
+  </div>
+
+  <!-- n=3 content (placeholder) -->
+  <div id="section3" style="display:none">
+    <p class="page-subtitle">
+      \(\theta_1, \theta_2, \theta_3 \in [0,\,2\pi]\) · d×d×s grid with θ₃ slider · color = LCE
+    </p>
+    <div class="notice" style="text-align:center;padding:2rem 1rem">
+      <strong>Triple pendulum heatmap data not yet generated.</strong><br>
+      <span style="color:var(--text-light);font-family:var(--font-ui);font-size:0.85rem">
+        Run <code>python nPendulum/heatmap.py --n 3 --res 300 --slices 20</code> to generate data,
+        then convert to a web binary and place in <code>data/pendulum_heatmap_n3.bin</code>.
+      </span>
+    </div>
+  </div>
 
   <!-- Heatmap row — full width -->
   <div id="heatmapSection" style="display:none">
@@ -117,7 +140,9 @@
   async function init() {
     const { rows, cols, data } = await loadBin('data/pendulum_heatmap_1000.bin');
     document.getElementById('loadingMsg').style.display = 'none';
-    document.getElementById('heatmapSection').style.display = 'block';
+    const hs = document.getElementById('heatmapSection');
+    hs.style.display = 'block';
+    hs.dataset.loaded = '1';
 
     let currentCmap = get('hm_pend_cmap') ?? 'viridis';
     const { offscreen, vmin, vmax } = prerender(data, rows, cols, getColormap(currentCmap));
@@ -198,6 +223,25 @@
   }
 
   init().catch(e => { document.getElementById('loadingMsg').textContent = 'Error: ' + e.message; });
+
+  // n=2 / n=3 toggle
+  const btnN2 = document.getElementById('btnN2');
+  const btnN3 = document.getElementById('btnN3');
+  btnN2.addEventListener('click', () => {
+    document.getElementById('section2').style.display = '';
+    document.getElementById('section3').style.display = 'none';
+    document.getElementById('heatmapSection').style.display =
+      document.getElementById('heatmapSection').dataset.loaded ? 'block' : 'none';
+    btnN2.className = 'btn-primary';
+    btnN3.className = 'btn-secondary';
+  });
+  btnN3.addEventListener('click', () => {
+    document.getElementById('section2').style.display = 'none';
+    document.getElementById('section3').style.display = '';
+    document.getElementById('heatmapSection').style.display = 'none';
+    btnN2.className = 'btn-secondary';
+    btnN3.className = 'btn-primary';
+  });
 </script>
 </body>
 </html>

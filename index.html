@@ -33,7 +33,7 @@
 </header>
 
 <section class="hero">
-  <h1>Chaos, Lyapunov Exponents &amp; Periodic Orbits</h1>
+  <h1>Using the LCE and Dimensionality Reduction Algorithms to <br> Visually Represent Chaotic Trajectories and Identify Periodic Orbits</h1>
   <p>An interactive exploration of chaotic dynamical systems using the Lyapunov
      Characteristic Exponent, dimensionality reduction, and GPU-accelerated simulation.</p>
   <div class="hero-formula">
@@ -42,19 +42,17 @@
 </section>
 
 <div class="page-wrapper">
-  <h1 class="page-title">Zachary Medjamia — Andover High School Capstone 2026</h1>
-
+  <h2>Project Overview</h2>
   <p>
-    This project investigates the structure of chaotic motion in <em>n</em>-pendulum
-    and gravitational <em>n</em>-body systems. By computing the Lyapunov Characteristic
+    This project investigates the structure of chaotic motion in <em>n</em>-pendulum. 
+    By computing the Lyapunov Characteristic
     Exponent (LCE) for millions of initial conditions and projecting the results with
-    UMAP, PCA, and t-SNE, the hidden geometry of phase space becomes visible — and
-    rare periodic orbits can be found within it.
+    UMAP, PCA, and t-SNE, we can visually represent the chaotic structure of these systems.
   </p>
 
   <h2>What is the Lyapunov Characteristic Exponent?</h2>
   <p>
-    Two nearby trajectories in a chaotic system diverge exponentially fast.
+    Two nearby trajectories in a chaotic system diverge exponentially.
     The LCE \(\lambda\) quantifies that divergence rate. When \(\lambda > 0\),
     the system is chaotic. When \(\lambda \approx 0\), the orbit is periodic
     or quasi-periodic. In practice it is estimated by integrating two trajectories
@@ -64,12 +62,18 @@
     \(\lambda \approx \dfrac{1}{T} \sum_{k} \ln \dfrac{\|\delta(t_k)\|}{\|\delta(t_{k-1})\|}\)
   </div>
 
+  \(T\) is the total time of the simulation, \(k\) is the index over each rescaling step, 
+  \(\delta(t_k)\) is the seperation between the two trajectories at time \(t_k\), 
+  \(\sum_k\) is summing the value \(\dfrac{\|\delta(t_k)\|}{\|\delta(t_{k-1})\|}\) over the index \(k\),
+  \(\text{ln}\) is the <a href="https://en.wikipedia.org/wiki/Natural_logarithm">natural logarithm function</a> and
+  \(\|\cdot\|\) is the <a href="https://en.wikipedia.org/wiki/Norm_(mathematics)">euclidian norm</a>.
+
   <h2>Why n-Pendulums?</h2>
   <p>
-    The n-pendulum is one of the simplest physical systems that exhibits genuine chaos.
+    The n-pendulum is one of the simplest physical systems that exhibits chaos.
     For \(n = 2\), a two-dimensional heatmap of initial angles already reveals fractal
     boundaries between chaotic and periodic regions. As \(n\) grows, the parameter
-    space becomes high-dimensional — this is where UMAP becomes essential.
+    space becomes high-dimensional, this is where UMAP becomes essential.
     Use the navigation above to explore the interactive simulations and heatmaps.
   </p>
 

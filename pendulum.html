@@ -48,13 +48,13 @@
 
     <div class="sim-controls">
       <h3>Pendulum count</h3>
-      <div class="control-group">
-        <select id="nSelect">
-          <option value="2" selected>2 — Double</option>
-          <option value="3">3 — Triple</option>
-          <option value="4">4 — Quadruple</option>
-          <option value="5">5</option>
-        </select>
+      <div class="control-group" style="display:flex;align-items:center;gap:0.5rem">
+        <input type="number" id="nInput" min="1" max="50" step="1" value="2"
+               style="width:70px;padding:0.3rem 0.5rem;border:1px solid var(--border);
+                      border-radius:3px;font-family:var(--font-code);font-size:1rem">
+        <span style="font-family:var(--font-ui);font-size:0.82rem;color:var(--text-light)">
+          pendulum(s)
+        </span>
       </div>
 
       <h3>Initial angles (radians)</h3>
@@ -95,18 +95,42 @@
   let sliders = [];
   let initialThetas = [2.0, 1.0];   // stored for reset
 
+  // Cycle of default starting angles for any n
+  const DEFAULT_ANGLES = [2.0, 1.0, 1.5, 0.8, 1.2, 2.5, 0.5, 1.8, 0.3, 2.2];
+
   function buildSliders(count, thetas) {
     const area = document.getElementById('sliderArea');
     area.innerHTML = '';
     sliders = [];
+
+    const large = count > 8;
+    if (large) {
+      // Compact 2-column grid for n > 8
+      area.style.display = 'grid';
+      area.style.gridTemplateColumns = '1fr 1fr';
+      area.style.gap = '4px';
+    } else {
+      area.style.display = '';
+      area.style.gridTemplateColumns = '';
+      area.style.gap = '';
+    }
+
+    const fs   = large ? '0.75rem' : '0.9rem';
+    const pad  = large ? '0.2rem 0.35rem' : '0.3rem 0.5rem';
+
     for (let i = 0; i < count; i++) {
-      const val = (thetas[i] ?? 1.0).toFixed(4);
+      const val = ((thetas[i] ?? DEFAULT_ANGLES[i % DEFAULT_ANGLES.length])).toFixed(large ? 3 : 4);
       const div = document.createElement('div');
-      div.className = 'control-group';
+      div.style.cssText = 'display:flex;align-items:center;gap:4px;';
       div.innerHTML = `
-        <label style="margin-bottom:0.25rem">θ<sub>${i+1}</sub> (radians)</label>
-        <input type="number" id="th${i}" min="-6.2832" max="6.2832" step="0.0001"
-               value="${val}" style="width:100%;padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:3px;font-family:var(--font-code);font-size:0.9rem">
+        <label style="font-family:var(--font-code);font-size:${fs};color:var(--text-light);
+                      white-space:nowrap;min-width:${large?'22px':'28px'}">
+          θ<sub>${i+1}</sub>
+        </label>
+        <input type="number" id="th${i}" min="-6.2832" max="6.2832"
+               step="${large ? 0.001 : 0.0001}" value="${val}"
+               style="width:100%;padding:${pad};border:1px solid var(--border);
+                      border-radius:3px;font-family:var(--font-code);font-size:${fs}">
       `;
       area.appendChild(div);
       sliders.push(div.querySelector('input'));
@@ -123,10 +147,13 @@
     document.getElementById('btnPlay').textContent = '⏸ Pause';
   }
 
-  document.getElementById('nSelect').addEventListener('change', e => {
-    n = parseInt(e.target.value);
-    const defaults = [2.0, 1.0, 1.5, 0.8, 1.2];
-    buildSliders(n, defaults);
+  const nInput = document.getElementById('nInput');
+  nInput.addEventListener('change', () => {
+    const v = parseInt(nInput.value);
+    if (!v || v < 1) return;
+    n = Math.min(v, 50);
+    nInput.value = n;
+    buildSliders(n, DEFAULT_ANGLES);
     applyAndPlay();
   });
 
@@ -176,7 +203,7 @@
   // For heatmap cross-launch
   window._launchPendulum = (thetas) => {
     n = thetas.length;
-    document.getElementById('nSelect').value = String(n);
+    document.getElementById('nInput').value = String(n);
     buildSliders(n, thetas);
     applyAndPlay();
   };
