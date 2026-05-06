@@ -48,11 +48,16 @@ export async function loadBin3D(url) {
     const hdr    = new Int32Array(buf0, 0, 4);   // nSlices, rows, cols, nParts
     const [nSlices, rows, cols, nParts] = hdr;
 
-    const restBufs = await Promise.all(
+    // Fetch remaining parts, checking each response before reading bytes
+    const restResps = await Promise.all(
       Array.from({ length: nParts - 1 }, (_, i) =>
-        fetch(url.replace(/\.bin$/, `.part${i + 1}.bin`)).then(r => r.arrayBuffer())
+        fetch(url.replace(/\.bin$/, `.part${i + 1}.bin`))
       )
     );
+    for (const r of restResps) {
+      if (!r.ok) throw new Error(`Part file missing (${r.status}) — run convert_n3_heatmap.py and commit all .partN.bin files`);
+    }
+    const restBufs = await Promise.all(restResps.map(r => r.arrayBuffer()));
 
     const parts = [new Float32Array(buf0, 16), ...restBufs.map(b => new Float32Array(b))];
     const total = parts.reduce((s, p) => s + p.length, 0);
@@ -62,10 +67,12 @@ export async function loadBin3D(url) {
     return { nSlices, rows, cols, data };
   }
 
-  // Single file
+  // Single file — check status before reading bytes to avoid HTML-body alignment errors
   const resp = await fetch(url);
-  const buf  = await resp.arrayBuffer();
-  const hdr  = new Int32Array(buf, 0, 3);
+  if (!resp.ok) throw new Error(
+    `Data file not found (${resp.status}). Run:  python docs/scripts/convert_n3_heatmap.py`);
+  const buf = await resp.arrayBuffer();
+  const hdr = new Int32Array(buf, 0, 3);
   return { nSlices: hdr[0], rows: hdr[1], cols: hdr[2], data: new Float32Array(buf, 12) };
 }
 

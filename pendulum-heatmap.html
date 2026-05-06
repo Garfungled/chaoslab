@@ -182,7 +182,7 @@
 <footer><p>Zachary Medjamia · Andover High School Capstone 2026</p></footer>
 
 <script type="module">
-  import { loadBin, prerender, renderColorbar, attachInteraction } from './js/heatmap.js';
+  import { loadBin, loadBin3D, prerender, renderColorbar, attachInteraction } from './js/heatmap.js';
   import { PendulumSim } from './js/pendulum-sim.js';
   import { getColormap } from './js/utils.js';
   import { get } from './js/settings.js';
@@ -277,8 +277,6 @@
   init().catch(e => { document.getElementById('loadingMsg').textContent = 'Error: ' + e.message; });
 
   // ── n=3 heatmap ────────────────────────────────────────────────────────────
-  import { loadBin3D } from './js/heatmap.js';
-
   let n3loaded = false;
 
   async function init3() {
