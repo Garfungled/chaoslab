@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chaos Landscapes — Chaos Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="site-logo" href="index.html">chaos<span>lab</span></a>
+    <nav>
+      <a href="pendulum.html">Pendulum</a>
+      <a href="pendulum-heatmap.html">Heatmap</a>
+      <a href="nbody.html">N-Body</a>
+      <a href="nbody-heatmap.html">N-Body Heatmap</a>
+      <a href="landscapes.html" class="active">Landscapes</a>
+      <a href="methodology.html">Methodology</a>
+      <a href="settings.html">⚙ Settings</a>
+    </nav>
+  </div>
+</header>
+
+<div class="breadcrumb">
+  <div class="breadcrumb-inner">
+    <a href="index.html">Home</a><span>›</span>Chaos Landscapes
+  </div>
+</div>
+
+<div class="page-wrapper">
+  <h1 class="page-title">Chaos Landscapes</h1>
+  <p class="page-subtitle">
+    UMAP · PCA · t-SNE applied to millions of initial conditions, colored by LCE.
+    Each image is a 2D projection of a high-dimensional phase space.
+  </p>
+
+  <div class="notice">
+    Each plot: rows = n values, columns = dimensionality reduction method.
+    Dark regions (low LCE) contain periodic/quasi-periodic orbits.
+    Bright regions (high LCE) are chaotic.
+  </div>
+
+  <h2>n = 2, 3, 4 — 1,000,000 samples</h2>
+  <div class="gallery-item">
+    <img src="img/comparison_grid_n2_3_4_1000000.png" alt="Chaos landscape n=2,3,4 comparison grid">
+    <div class="gallery-caption">
+      <strong>PCA</strong> (left column) produces featureless gradients with no visible boundary structure.
+      <strong>t-SNE</strong> (middle) shows fragmented local clusters but loses global topology.
+      <strong>UMAP</strong> (right) reveals coherent fractal-like boundaries between chaotic and
+      periodic regions, preserving both local and global structure. The periodic orbit islands
+      (dark regions) shrink dramatically as n increases from 2 to 4.
+    </div>
+  </div>
+
+  <h2>n = 3, 4, 5 — 100,000 samples</h2>
+  <div class="gallery-item">
+    <img src="img/comparison_grid_n3_4_5_100000.png" alt="Chaos landscape n=3,4,5">
+    <div class="gallery-caption">
+      At n = 5, periodic orbits are rare enough that 100,000 samples barely reveals them.
+      The UMAP embedding still shows coherent structure even at this density — testament to
+      its topology-preserving properties compared to PCA and t-SNE.
+    </div>
+  </div>
+
+  <h2>n = 5, 6, 7 — 100,000 samples</h2>
+  <div class="gallery-item">
+    <img src="img/comparison_grid_n5_6_7_100000.png" alt="Chaos landscape n=5,6,7">
+    <div class="gallery-caption">
+      At high n, the UMAP landscape becomes increasingly uniform — the vast majority of phase
+      space is chaotic. This is consistent with the theoretical prediction from Ispolatov &amp; Doebeli
+      (2014): the fraction of chaotic phase space approaches 1 as dimension grows.
+    </div>
+  </div>
+
+  <h2>n = 8, 9, 10 — 100,000 samples</h2>
+  <div class="gallery-item">
+    <img src="img/comparison_grid_n8_9_10_100000.png" alt="Chaos landscape n=8,9,10">
+    <div class="gallery-caption">
+      At n ≥ 8, the landscape is nearly entirely chaotic. Any remaining low-LCE structure
+      requires far more samples (100M+) to detect. The dimensionality reduction methods converge
+      in behaviour since there is little structure left to preserve.
+    </div>
+  </div>
+
+  <h2>Sample size comparison — UMAP, n = 2, 3, 4</h2>
+  <div class="gallery-item">
+    <img src="img/sample_grid_umap_n2_3_4_s50000_100000_1000000.png" alt="Sample size comparison UMAP n=2,3,4">
+    <div class="gallery-caption">
+      The effect of increasing sample count (rows: 50k, 100k, 1M) on the quality of the UMAP
+      chaos landscape. At 50k samples, the periodic orbit islands are coarsely resolved.
+      At 1M, the fractal boundary structure becomes sharp and reliable.
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>Zachary Medjamia · Andover High School Capstone 2026</p>
+</footer>
+
+</body>
+</html>

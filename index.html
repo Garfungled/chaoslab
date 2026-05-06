@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chaos in Pendulum Systems — Zachary Medjamia</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a class="site-logo" href="index.html">chaos<span>lab</span></a>
+    <nav>
+      <div class="nav-group">
+        <a href="pendulum.html" class="active">Pendulum ▾</a>
+        <div class="nav-dropdown">
+          <a href="pendulum.html">Simulator</a>
+          <a href="pendulum-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <a href="nbody.html">N-Body ▾</a>
+        <div class="nav-dropdown">
+          <a href="nbody.html">Simulator</a>
+          <a href="nbody-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <a href="methodology.html">Methodology</a>
+      <a href="settings.html">⚙ Settings</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Chaos, Lyapunov Exponents &amp; Periodic Orbits</h1>
+  <p>An interactive exploration of chaotic dynamical systems using the Lyapunov
+     Characteristic Exponent, dimensionality reduction, and GPU-accelerated simulation.</p>
+  <div class="hero-formula">
+    \(\lambda = \lim_{t \to \infty} \dfrac{1}{t} \ln \dfrac{\|\delta(t)\|}{\|\delta(0)\|}\)
+  </div>
+</section>
+
+<div class="page-wrapper">
+  <h1 class="page-title">Zachary Medjamia — Andover High School Capstone 2026</h1>
+
+  <p>
+    This project investigates the structure of chaotic motion in <em>n</em>-pendulum
+    and gravitational <em>n</em>-body systems. By computing the Lyapunov Characteristic
+    Exponent (LCE) for millions of initial conditions and projecting the results with
+    UMAP, PCA, and t-SNE, the hidden geometry of phase space becomes visible — and
+    rare periodic orbits can be found within it.
+  </p>
+
+  <h2>What is the Lyapunov Characteristic Exponent?</h2>
+  <p>
+    Two nearby trajectories in a chaotic system diverge exponentially fast.
+    The LCE \(\lambda\) quantifies that divergence rate. When \(\lambda > 0\),
+    the system is chaotic. When \(\lambda \approx 0\), the orbit is periodic
+    or quasi-periodic. In practice it is estimated by integrating two trajectories
+    simultaneously and periodically rescaling the separation:
+  </p>
+  <div class="eq-box">
+    \(\lambda \approx \dfrac{1}{T} \sum_{k} \ln \dfrac{\|\delta(t_k)\|}{\|\delta(t_{k-1})\|}\)
+  </div>
+
+  <h2>Why n-Pendulums?</h2>
+  <p>
+    The n-pendulum is one of the simplest physical systems that exhibits genuine chaos.
+    For \(n = 2\), a two-dimensional heatmap of initial angles already reveals fractal
+    boundaries between chaotic and periodic regions. As \(n\) grows, the parameter
+    space becomes high-dimensional — this is where UMAP becomes essential.
+    Use the navigation above to explore the interactive simulations and heatmaps.
+  </p>
+
+  <div class="notice">
+    All simulations run live in your browser using JavaScript RK4 integration.
+    Click any pixel in the heatmaps to launch that simulation.
+    Scroll to zoom the heatmaps; drag to pan; double-click to reset.
+  </div>
+</div>
+
+<footer>
+  <p>Zachary Medjamia · Andover High School Capstone 2026 ·
+     <a href="methodology.html">Methodology</a>
+  </p>
+</footer>
+</body>
+</html>

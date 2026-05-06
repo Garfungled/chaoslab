@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N-Body Heatmap — Chaos Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a class="site-logo" href="index.html">chaos<span>lab</span></a>
+    <nav>
+      <div class="nav-group">
+        <a href="pendulum.html">Pendulum ▾</a>
+        <div class="nav-dropdown">
+          <a href="pendulum.html">Simulator</a>
+          <a href="pendulum-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <a href="nbody.html" class="active">N-Body ▾</a>
+        <div class="nav-dropdown">
+          <a href="nbody.html">Simulator</a>
+          <a href="nbody-heatmap.html" class="active">Heatmap</a>
+        </div>
+      </div>
+      <a href="methodology.html">Methodology</a>
+      <a href="settings.html">⚙ Settings</a>
+    </nav>
+  </div>
+</header>
+<div class="breadcrumb"><div class="breadcrumb-inner">
+  <a href="index.html">Home</a><span>›</span>
+  <a href="nbody.html">N-Body</a><span>›</span>Heatmap
+</div></div>
+
+<div class="page-wrapper">
+  <h1 class="page-title">2-Body LCE Heatmap</h1>
+  <p class="page-subtitle">
+    500×500 · body 0 at rest · body 1 velocity \((vx_1, vy_1)\) · r = 2 ·
+    <strong>click to simulate · scroll to zoom · drag to pan</strong>
+  </p>
+
+  <div id="loadingMsg" class="notice">Loading heatmap data…</div>
+
+  <div id="heatmapSection" style="display:none">
+
+    <!-- Heatmap row — full width -->
+    <div style="display:flex;gap:0.75rem;align-items:flex-start;justify-content:center">
+      <div class="axis-y-label" style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--font-ui);font-size:0.75rem;color:var(--text-light);align-self:center">vy₁ (initial y-velocity)</div>
+      <div>
+        <div class="heatmap-block" style="position:relative">
+          <canvas id="hmCanvas" class="heatmap-canvas"
+                  width="700" height="700"
+                  style="width:700px;height:700px;display:block"></canvas>
+          <canvas id="overlayCanvas" width="700" height="700"
+                  style="position:absolute;top:0;left:0;width:700px;height:700px;pointer-events:none"></canvas>
+          <div class="heatmap-tooltip" id="tooltip"></div>
+        </div>
+        <div class="axis-x-label">vx₁ (initial x-velocity)</div>
+        <div class="zoom-hint">Scroll: zoom · Drag: pan · Double-click: reset view</div>
+      </div>
+      <div class="colorbar-col">
+        <div class="cb-label-text">Max Lyapunov Exponent</div>
+        <div style="display:flex;gap:4px;height:700px">
+          <canvas class="colorbar-canvas" id="colorbar" height="700" style="width:18px"></canvas>
+          <div class="cb-labels" id="cbLabels"></div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- Simulation row — below heatmap -->
+    <div style="display:flex;gap:1.25rem;justify-content:center;align-items:flex-start">
+      <div>
+        <div class="sim-canvas-wrap">
+          <canvas id="inlineCanvas" width="520" height="520"></canvas>
+        </div>
+      </div>
+      <div class="sim-controls" style="min-width:220px;max-width:260px">
+        <h3>Selected point</h3>
+        <div class="clicked-info" id="clickedInfo">Click a pixel above to select.</div>
+        <div class="lce-readout" id="inlineLCE" style="margin-top:0.5rem">—</div>
+        <div class="btn-row mt2">
+          <button class="btn-primary"   id="btnPlay">▶ Play</button>
+          <button class="btn-secondary" id="btnStop">⏹ Stop</button>
+        </div>
+        <hr>
+        <div style="font-family:var(--font-ui);font-size:0.82rem">
+          <h4 style="font-size:0.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:.5rem">Reference velocities (r = 2)</h4>
+          <p style="color:var(--text-light)"><strong>v<sub>circ</sub> ≈ 0.50</strong> — circular orbit (cyan)</p>
+          <p style="color:var(--text-light)"><strong>v<sub>esc</sub> ≈ 1.00</strong> — escape speed (orange)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer><p>Zachary Medjamia · Andover High School Capstone 2026</p></footer>
+
+<script type="module">
+  import { loadBin, prerender, renderColorbar, attachInteraction } from './js/heatmap.js';
+  import { NBodySim } from './js/nbody-sim.js';
+  import { getColormap } from './js/utils.js';
+  import { get } from './js/settings.js';
+
+  const R = 2.0, VMAX = 1.5;
+
+  async function init() {
+    const { rows, cols, data } = await loadBin('data/nbody_heatmap_500.bin');
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('heatmapSection').style.display = 'block';
+
+    let currentCmap = get('hm_nbody_cmap') ?? 'viridis';
+    const { offscreen, vmin, vmax } = prerender(data, rows, cols, getColormap(currentCmap));
+
+    const cbCanvas = document.getElementById('colorbar');
+    renderColorbar(cbCanvas, vmin, vmax, 200, getColormap(currentCmap));
+    const cbLabels = document.getElementById('cbLabels');
+    [vmax, (vmin+vmax)/2, vmin].forEach(v => {
+      const d = document.createElement('div'); d.textContent = v.toFixed(2); cbLabels.appendChild(d);
+    });
+
+    // Reference circles overlay
+    const overlay = document.getElementById('overlayCanvas');
+    const oc = overlay.getContext('2d');
+    const cx = 350, cy = 350;
+    const vCircPx = (0.5 / (2*VMAX)) * 700;
+    const vEscPx  = (1.0 / (2*VMAX)) * 700;
+    [[vCircPx,'rgba(0,200,200,0.75)','v_circ'],[vEscPx,'rgba(255,165,0,0.75)','v_esc']].forEach(([rad,col,lbl])=>{
+      oc.beginPath(); oc.arc(cx, cy, rad, 0, Math.PI*2);
+      oc.strokeStyle=col; oc.lineWidth=1.5; oc.setLineDash([4,3]); oc.stroke();
+      oc.fillStyle=col; oc.font='12px sans-serif'; oc.fillText(lbl, cx+rad+4, cy-4);
+    });
+
+    const inlineCanvas = document.getElementById('inlineCanvas');
+    const sim = new NBodySim(inlineCanvas);
+    sim.scale = 80;
+
+    const btnPlay = document.getElementById('btnPlay');
+    btnPlay.addEventListener('click', () => {
+      if (sim.running) { sim.stop(); btnPlay.textContent = '▶ Play'; }
+      else             { sim.start(); btnPlay.textContent = '⏸ Pause'; }
+    });
+    document.getElementById('btnStop').addEventListener('click', () => {
+      sim.stop(); btnPlay.textContent = '▶ Play';
+    });
+
+    const hmCanvas = document.getElementById('hmCanvas');
+    const interaction = attachInteraction(
+      hmCanvas, offscreen, data, rows, cols,
+      { xMin: -VMAX, xMax: VMAX, yMin: -VMAX, yMax: VMAX },
+      null,
+      (vx, vy, lce) => {
+        document.getElementById('clickedInfo').innerHTML =
+          `vx₁ = ${vx.toFixed(4)}<br>vy₁ = ${vy.toFixed(4)}<br>LCE = ${lce.toFixed(5)}`;
+        document.getElementById('inlineLCE').textContent = `LCE = ${lce.toFixed(5)}`;
+        sim.stop();
+        sim.reset([[-R/2,0],[R/2,0]],[[0,0],[vx,vy]]);
+        sim.start();
+        btnPlay.textContent = '⏸ Pause';
+      }
+    );
+
+    // Live settings updates
+    window.addEventListener('chaosSettingsChanged', e => {
+      if (!sim.running) sim._draw();
+      const newCmap = (e.detail && e.detail.hm_nbody_cmap) || get('hm_nbody_cmap') || 'viridis';
+      if (newCmap !== currentCmap) {
+        currentCmap = newCmap;
+        const fn = getColormap(newCmap);
+        const { offscreen: newOff } = prerender(data, rows, cols, fn);
+        renderColorbar(cbCanvas, vmin, vmax, 200, fn);
+        interaction.updateOffscreen(newOff);
+      }
+    });
+  }
+
+  init().catch(e => { document.getElementById('loadingMsg').textContent = 'Error: ' + e.message; });
+</script>
+</body>
+</html>

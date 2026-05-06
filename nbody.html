@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N-Body Simulator — Chaos Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a class="site-logo" href="index.html">chaos<span>lab</span></a>
+    <nav>
+      <div class="nav-group">
+        <a href="pendulum.html">Pendulum ▾</a>
+        <div class="nav-dropdown">
+          <a href="pendulum.html">Simulator</a>
+          <a href="pendulum-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <a href="nbody.html" class="active">N-Body ▾</a>
+        <div class="nav-dropdown">
+          <a href="nbody.html" class="active">Simulator</a>
+          <a href="nbody-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <a href="methodology.html">Methodology</a>
+      <a href="settings.html">⚙ Settings</a>
+    </nav>
+  </div>
+</header>
+<div class="breadcrumb"><div class="breadcrumb-inner">
+  <a href="index.html">Home</a><span>›</span>N-Body Simulator
+</div></div>
+
+<div class="page-wrapper">
+  <h1 class="page-title">N-Body Gravitational Simulator</h1>
+  <p class="page-subtitle">G = 1 · all masses = 1 · softening = 0.01 · camera follows center of mass</p>
+
+  <div class="sim-layout">
+    <div>
+      <div class="sim-canvas-wrap">
+        <canvas id="nbodyCanvas" width="500" height="500"></canvas>
+      </div>
+    </div>
+
+    <div class="sim-controls">
+      <h3>Initial conditions</h3>
+
+      <div class="control-group">
+        <label>Separation r <span id="rVal">2.00</span></label>
+        <input type="range" id="rSlider" min="0.5" max="5.0" step="0.05" value="2.0">
+      </div>
+      <div class="control-group">
+        <label>Body 1 vx <span id="vxVal">0.000</span></label>
+        <input type="range" id="vxSlider" min="-2.0" max="2.0" step="0.005" value="0.0">
+      </div>
+      <div class="control-group">
+        <label>Body 1 vy <span id="vyVal">0.500</span></label>
+        <input type="range" id="vySlider" min="-2.0" max="2.0" step="0.005" value="0.5">
+      </div>
+
+      <div class="notice" style="margin-top:0.5rem;font-size:0.78rem">
+        v<sub>circ</sub> = <span id="vcircVal">—</span> &nbsp;·&nbsp;
+        v<sub>esc</sub> = <span id="vescVal">—</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary"   id="btnPlay">▶ Play</button>
+        <button class="btn-secondary" id="btnReset">↺ Reset</button>
+      </div>
+
+      <hr>
+      <h3 style="margin-top:0">Presets</h3>
+      <div class="btn-row" style="flex-wrap:wrap">
+        <button class="btn-secondary preset" data-preset="circular">Circular</button>
+        <button class="btn-secondary preset" data-preset="elliptical">Elliptical</button>
+        <button class="btn-secondary preset" data-preset="escape">Escape</button>
+        <button class="btn-secondary preset" data-preset="figure8">Figure-8</button>
+      </div>
+
+      <hr>
+      <p style="font-family:var(--font-ui);font-size:0.79rem;color:var(--text-light)">
+        Body 0 at \((-r/2,\,0)\) at rest.
+        Body 1 at \((r/2,\,0)\) with \((vx,\,vy)\).
+        Camera tracks center of mass. Grid = 1 world unit.
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer><p>Zachary Medjamia · Andover High School Capstone 2026</p></footer>
+
+<script type="module">
+  import { NBodySim } from './js/nbody-sim.js';
+
+  const canvas   = document.getElementById('nbodyCanvas');
+  const sim      = new NBodySim(canvas);
+  const rSlider  = document.getElementById('rSlider');
+  const vxSlider = document.getElementById('vxSlider');
+  const vySlider = document.getElementById('vySlider');
+
+  function updateLabels() {
+    const r = parseFloat(rSlider.value);
+    document.getElementById('rVal').textContent  = r.toFixed(2);
+    document.getElementById('vxVal').textContent = parseFloat(vxSlider.value).toFixed(3);
+    document.getElementById('vyVal').textContent = parseFloat(vySlider.value).toFixed(3);
+    document.getElementById('vcircVal').textContent = Math.sqrt(1/(2*r)).toFixed(3);
+    document.getElementById('vescVal').textContent  = Math.sqrt(2/r).toFixed(3);
+  }
+  [rSlider, vxSlider, vySlider].forEach(s => s.addEventListener('input', updateLabels));
+
+  function getState() {
+    return { r: parseFloat(rSlider.value), vx: parseFloat(vxSlider.value), vy: parseFloat(vySlider.value) };
+  }
+
+  function applyAndPlay() {
+    const { r, vx, vy } = getState();
+    sim.scale = Math.min(120, 100 / r * 1.5);
+    sim.stop();
+    sim.reset([[-r/2, 0], [r/2, 0]], [[0, 0], [vx, vy]]);
+    sim.start();
+    document.getElementById('btnPlay').textContent = '⏸ Pause';
+  }
+
+  document.getElementById('btnPlay').addEventListener('click', () => {
+    if (sim.running) {
+      sim.stop();
+      document.getElementById('btnPlay').textContent = '▶ Play';
+    } else {
+      sim.start();
+      document.getElementById('btnPlay').textContent = '⏸ Pause';
+    }
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    applyAndPlay();
+  });
+
+  const PRESETS = {
+    circular:   { r:2.0, vx:0,     vy:0.500 },
+    elliptical: { r:2.0, vx:0,     vy:0.350 },
+    escape:     { r:2.0, vx:0,     vy:1.100 },
+    figure8:    { r:2.0, vx:0.466, vy:0.432 },
+  };
+  document.querySelectorAll('.preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = PRESETS[btn.dataset.preset];
+      rSlider.value = p.r; vxSlider.value = p.vx; vySlider.value = p.vy;
+      updateLabels();
+      applyAndPlay();
+    });
+  });
+
+  updateLabels();
+  applyAndPlay();
+
+  window.addEventListener('chaosSettingsChanged', () => {
+    if (!sim.running) sim._draw();
+  });
+</script>
+</body>
+</html>

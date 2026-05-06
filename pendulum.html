@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pendulum Simulator — Chaos Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a class="site-logo" href="index.html">chaos<span>lab</span></a>
+    <nav>
+      <div class="nav-group">
+        <a href="pendulum.html" class="active">Pendulum ▾</a>
+        <div class="nav-dropdown">
+          <a href="pendulum.html" class="active">Simulator</a>
+          <a href="pendulum-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <a href="nbody.html">N-Body ▾</a>
+        <div class="nav-dropdown">
+          <a href="nbody.html">Simulator</a>
+          <a href="nbody-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <a href="methodology.html">Methodology</a>
+      <a href="settings.html">⚙ Settings</a>
+    </nav>
+  </div>
+</header>
+<div class="breadcrumb"><div class="breadcrumb-inner">
+  <a href="index.html">Home</a><span>›</span>Pendulum Simulator
+</div></div>
+
+<div class="page-wrapper">
+  <h1 class="page-title">n-Pendulum Simulator</h1>
+  <p class="page-subtitle">Live RK4 · real-time LCE · persistent trail · <a href="pendulum-heatmap.html">open heatmap →</a></p>
+
+  <div class="sim-layout">
+    <div>
+      <div class="sim-canvas-wrap" style="background:#fff;">
+        <canvas id="pendCanvas" width="520" height="520"></canvas>
+      </div>
+    </div>
+
+    <div class="sim-controls">
+      <h3>Pendulum count</h3>
+      <div class="control-group">
+        <select id="nSelect">
+          <option value="2" selected>2 — Double</option>
+          <option value="3">3 — Triple</option>
+          <option value="4">4 — Quadruple</option>
+          <option value="5">5</option>
+        </select>
+      </div>
+
+      <h3>Initial angles (radians)</h3>
+      <div id="sliderArea"></div>
+
+      <div class="btn-row">
+        <button class="btn-primary"   id="btnPlay">▶ Play</button>
+        <button class="btn-secondary" id="btnReset">↺ Reset</button>
+      </div>
+      <div class="btn-row" style="margin-top:0.4rem">
+        <button class="btn-secondary" id="btnLCE" style="width:100%">👁 Show LCE Computation</button>
+      </div>
+
+      <hr>
+      <p style="font-family:var(--font-ui);font-size:0.79rem;color:var(--text-light)">
+        Masses = lengths = 1, g = 9.807.
+        Trail is persistent — reset to clear it.
+        Try θ₁ ≈ π for chaotic motion.
+      </p>
+      <p id="lceModeInfo" style="display:none;font-family:var(--font-ui);font-size:0.79rem;color:#4a90c4">
+        <strong>LCE mode:</strong> blue = reference · red = Δθ₁ = 0.05 rad offset (no rescaling) ·
+        green dashes = separation. The LCE stats use a separate tiny ε₀ = 10⁻⁶ perturbation.
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer><p>Zachary Medjamia · Andover High School Capstone 2026</p></footer>
+
+<script type="module">
+  import { PendulumSim } from './js/pendulum-sim.js';
+
+  const canvas  = document.getElementById('pendCanvas');
+  const sim     = new PendulumSim(canvas, 2);
+  // LCE drawn directly on canvas — no separate readout needed
+
+  let n = 2;
+  let sliders = [];
+  let initialThetas = [2.0, 1.0];   // stored for reset
+
+  function buildSliders(count, thetas) {
+    const area = document.getElementById('sliderArea');
+    area.innerHTML = '';
+    sliders = [];
+    for (let i = 0; i < count; i++) {
+      const val = (thetas[i] ?? 1.0).toFixed(4);
+      const div = document.createElement('div');
+      div.className = 'control-group';
+      div.innerHTML = `
+        <label style="margin-bottom:0.25rem">θ<sub>${i+1}</sub> (radians)</label>
+        <input type="number" id="th${i}" min="-6.2832" max="6.2832" step="0.0001"
+               value="${val}" style="width:100%;padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:3px;font-family:var(--font-code);font-size:0.9rem">
+      `;
+      area.appendChild(div);
+      sliders.push(div.querySelector('input'));
+    }
+  }
+
+  function getThetas() { return sliders.map(s => parseFloat(s.value)); }
+
+  function applyAndPlay() {
+    initialThetas = getThetas();
+    sim.stop();
+    sim.reset(initialThetas);
+    sim.start();
+    document.getElementById('btnPlay').textContent = '⏸ Pause';
+  }
+
+  document.getElementById('nSelect').addEventListener('change', e => {
+    n = parseInt(e.target.value);
+    const defaults = [2.0, 1.0, 1.5, 0.8, 1.2];
+    buildSliders(n, defaults);
+    applyAndPlay();
+  });
+
+  document.getElementById('btnPlay').addEventListener('click', () => {
+    if (sim.running) {
+      sim.stop();
+      document.getElementById('btnPlay').textContent = '▶ Play';
+    } else {
+      sim.start();
+      document.getElementById('btnPlay').textContent = '⏸ Pause';
+    }
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    const thetas = getThetas();
+    sim.stop();
+    sim.reset(thetas);
+    document.getElementById('btnPlay').textContent = '▶ Play';
+    sim.start();
+    document.getElementById('btnPlay').textContent = '⏸ Pause';
+  });
+
+  buildSliders(n, [2.0, 1.0]);
+  applyAndPlay();
+
+  document.getElementById('btnLCE').addEventListener('click', () => {
+    sim.lceMode = !sim.lceMode;
+    const btn  = document.getElementById('btnLCE');
+    const info = document.getElementById('lceModeInfo');
+    if (sim.lceMode) {
+      btn.textContent = '👁 Hide LCE Computation';
+      btn.classList.replace('btn-secondary', 'btn-primary');
+      info.style.display = 'block';
+    } else {
+      btn.textContent = '👁 Show LCE Computation';
+      btn.classList.replace('btn-primary', 'btn-secondary');
+      info.style.display = 'none';
+    }
+    if (!sim.running) sim._draw();
+  });
+
+  // Live settings updates — redraw when settings change
+  window.addEventListener('chaosSettingsChanged', () => {
+    if (!sim.running) sim._draw();
+  });
+
+  // For heatmap cross-launch
+  window._launchPendulum = (thetas) => {
+    n = thetas.length;
+    document.getElementById('nSelect').value = String(n);
+    buildSliders(n, thetas);
+    applyAndPlay();
+  };
+</script>
+</body>
+</html>

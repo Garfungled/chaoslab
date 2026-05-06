@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Chaos Lab</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <a class="site-logo" href="index.html">chaos<span>lab</span></a>
+    <nav>
+      <div class="nav-group">
+        <a href="pendulum.html">Pendulum ▾</a>
+        <div class="nav-dropdown">
+          <a href="pendulum.html">Simulator</a>
+          <a href="pendulum-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <div class="nav-group">
+        <a href="nbody.html">N-Body ▾</a>
+        <div class="nav-dropdown">
+          <a href="nbody.html">Simulator</a>
+          <a href="nbody-heatmap.html">Heatmap</a>
+        </div>
+      </div>
+      <a href="methodology.html">Methodology</a>
+      <a href="settings.html" class="active">⚙ Settings</a>
+    </nav>
+  </div>
+</header>
+<div class="breadcrumb"><div class="breadcrumb-inner">
+  <a href="index.html">Home</a><span>›</span>Settings
+</div></div>
+
+<div class="page-wrapper">
+  <h1 class="page-title">Settings</h1>
+  <p class="page-subtitle">Changes save automatically and sync to all open tabs.</p>
+
+  <div class="settings-grid">
+
+    <!-- Pendulum colors -->
+    <div class="settings-section">
+      <h3>Pendulum — Colors</h3>
+
+      <div class="settings-row">
+        <label>Background</label>
+        <div class="setting-ctrl">
+          <input type="color" id="pend_bg" value="#ffffff">
+          <span class="color-hex" id="pend_bg_hex">#ffffff</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Rod / pivot</label>
+        <div class="setting-ctrl">
+          <input type="color" id="pend_rod" value="#000000">
+          <span class="color-hex" id="pend_rod_hex">#000000</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Bob</label>
+        <div class="setting-ctrl">
+          <input type="color" id="pend_bob" value="#0000c8">
+          <span class="color-hex" id="pend_bob_hex">#0000c8</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Trail</label>
+        <div class="setting-ctrl">
+          <input type="color" id="pend_trail" value="#e6e6e6">
+          <span class="color-hex" id="pend_trail_hex">#e6e6e6</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Perturbed pendulum</label>
+        <div class="setting-ctrl">
+          <input type="color" id="pend_pert" value="#dc3c00">
+          <span class="color-hex" id="pend_pert_hex">#dc3c00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pendulum parameters -->
+    <div class="settings-section">
+      <h3>Pendulum — Parameters</h3>
+
+      <div class="settings-row">
+        <label>Trail width (px)</label>
+        <div class="setting-ctrl">
+          <input type="range" class="setting-range" id="pend_trail_w" min="1" max="5" step="1" value="1">
+          <span class="color-hex" id="pend_trail_w_val" style="width:22px;text-align:right">1</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>Visual ε — Δθ₁ offset (rad)</label>
+        <div class="setting-ctrl">
+          <input type="number" class="setting-num" id="pend_vis_eps"
+                 min="0.001" max="1.0" step="0.001" value="0.05">
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>LCE ε₀ (actual epsilon)</label>
+        <div class="setting-ctrl">
+          <select class="setting-select" id="pend_lce_eps">
+            <option value="0.0001">1e-4</option>
+            <option value="0.00001">1e-5</option>
+            <option value="0.000001" selected>1e-6</option>
+            <option value="0.0000001">1e-7</option>
+            <option value="0.00000001">1e-8</option>
+            <option value="0.000000001">1e-9</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-row" style="margin-top:0.5rem">
+        <label>Show stats overlay</label>
+        <div class="setting-ctrl">
+          <input type="checkbox" class="setting-check" id="show_stats" checked>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap colormaps -->
+    <div class="settings-section">
+      <h3>Heatmap — Colormaps</h3>
+
+      <div class="settings-row">
+        <label>Pendulum heatmap</label>
+        <div class="setting-ctrl">
+          <select class="setting-select" id="hm_pend_cmap">
+            <option value="viridis" selected>Viridis</option>
+            <option value="plasma">Plasma</option>
+            <option value="inferno">Inferno</option>
+            <option value="magma">Magma</option>
+            <option value="hot">Hot</option>
+            <option value="cool">Cool</option>
+            <option value="gray">Gray</option>
+          </select>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>N-Body heatmap</label>
+        <div class="setting-ctrl">
+          <select class="setting-select" id="hm_nbody_cmap">
+            <option value="viridis" selected>Viridis</option>
+            <option value="plasma">Plasma</option>
+            <option value="inferno">Inferno</option>
+            <option value="magma">Magma</option>
+            <option value="hot">Hot</option>
+            <option value="cool">Cool</option>
+            <option value="gray">Gray</option>
+          </select>
+        </div>
+      </div>
+
+      <p style="font-family:var(--font-ui);font-size:0.78rem;color:var(--text-light);margin-top:0.75rem;margin-bottom:0">
+        Colormap changes take effect immediately on open heatmap tabs.
+      </p>
+    </div>
+
+    <!-- N-Body -->
+    <div class="settings-section">
+      <h3>N-Body Simulator</h3>
+
+      <div class="settings-row">
+        <label>Background</label>
+        <div class="setting-ctrl">
+          <input type="color" id="nb_bg" value="#0f1923">
+          <span class="color-hex" id="nb_bg_hex">#0f1923</span>
+        </div>
+      </div>
+
+      <p style="font-family:var(--font-ui);font-size:0.78rem;color:var(--text-light);margin-top:0.75rem;margin-bottom:0">
+        Body colors are generated automatically from HSV hue rotation.
+      </p>
+    </div>
+
+  </div><!-- .settings-grid -->
+
+  <div class="settings-footer">
+    <button class="btn-secondary" id="btnReset">↺ Reset to defaults</button>
+    <span class="settings-saved-msg" id="savedMsg">✓ Saved</span>
+  </div>
+</div>
+
+<footer><p>Zachary Medjamia · Andover High School Capstone 2026</p></footer>
+
+<script type="module">
+  import { DEFAULTS, load, save, reset } from './js/settings.js';
+
+  const settings = load();
+
+  // Map field id → current value
+  const colorIds  = ['pend_bg', 'pend_rod', 'pend_bob', 'pend_trail', 'pend_pert', 'nb_bg'];
+  const cmapIds   = ['hm_pend_cmap', 'hm_nbody_cmap'];  // string selects
+  const numberIds = ['pend_vis_eps'];
+  const rangeIds  = ['pend_trail_w'];
+  const checkIds  = ['show_stats'];
+  // pend_lce_eps is a numeric select — handled separately
+
+  // Populate fields from saved settings
+  colorIds.forEach(id => {
+    const el = document.getElementById(id);
+    el.value = settings[id] ?? DEFAULTS[id];
+    const hex = document.getElementById(id + '_hex');
+    if (hex) hex.textContent = el.value;
+  });
+  cmapIds.forEach(id => {
+    const el = document.getElementById(id);
+    const val = settings[id] ?? DEFAULTS[id];
+    for (const opt of el.options) {
+      if (opt.value === val) { opt.selected = true; break; }
+    }
+  });
+  // LCE epsilon: compare numerically since JS serializes 1e-7 as "1e-7" not "0.0000001"
+  (function() {
+    const el = document.getElementById('pend_lce_eps');
+    const val = parseFloat(settings['pend_lce_eps'] ?? DEFAULTS['pend_lce_eps']);
+    let matched = false;
+    for (const opt of el.options) {
+      if (Math.abs(parseFloat(opt.value) - val) < val * 0.01) { opt.selected = true; matched = true; break; }
+    }
+    if (!matched) el.options[2].selected = true; // default 1e-6
+  })();
+  numberIds.forEach(id => {
+    document.getElementById(id).value = settings[id] ?? DEFAULTS[id];
+  });
+  rangeIds.forEach(id => {
+    const el = document.getElementById(id);
+    el.value = settings[id] ?? DEFAULTS[id];
+    const valEl = document.getElementById(id + '_val');
+    if (valEl) valEl.textContent = el.value;
+  });
+  checkIds.forEach(id => {
+    document.getElementById(id).checked = !!(settings[id] ?? DEFAULTS[id]);
+  });
+
+  function showSaved() {
+    const msg = document.getElementById('savedMsg');
+    msg.classList.add('visible');
+    clearTimeout(msg._t);
+    msg._t = setTimeout(() => msg.classList.remove('visible'), 1800);
+  }
+
+  function persist() {
+    const s = load();
+    colorIds.forEach(id => { s[id] = document.getElementById(id).value; });
+    cmapIds.forEach(id => { s[id] = document.getElementById(id).value; });
+    s['pend_lce_eps'] = parseFloat(document.getElementById('pend_lce_eps').value);
+    numberIds.forEach(id => { s[id] = parseFloat(document.getElementById(id).value); });
+    rangeIds.forEach(id => { s[id] = parseInt(document.getElementById(id).value, 10); });
+    checkIds.forEach(id => { s[id] = document.getElementById(id).checked; });
+    save(s);
+    showSaved();
+  }
+
+  // Wire up color pickers
+  colorIds.forEach(id => {
+    const el = document.getElementById(id);
+    const hex = document.getElementById(id + '_hex');
+    el.addEventListener('input', () => {
+      if (hex) hex.textContent = el.value;
+      persist();
+    });
+  });
+
+  // Wire up colormap selects
+  cmapIds.forEach(id => {
+    document.getElementById(id).addEventListener('change', persist);
+  });
+  document.getElementById('pend_lce_eps').addEventListener('change', persist);
+
+  // Wire up number inputs
+  numberIds.forEach(id => {
+    document.getElementById(id).addEventListener('change', persist);
+    document.getElementById(id).addEventListener('input', persist);
+  });
+
+  // Wire up range inputs
+  rangeIds.forEach(id => {
+    const el = document.getElementById(id);
+    const valEl = document.getElementById(id + '_val');
+    el.addEventListener('input', () => {
+      if (valEl) valEl.textContent = el.value;
+      persist();
+    });
+  });
+
+  // Wire up checkboxes
+  checkIds.forEach(id => {
+    document.getElementById(id).addEventListener('change', persist);
+  });
+
+  function repopulate(src) {
+    colorIds.forEach(id => {
+      const el = document.getElementById(id);
+      el.value = src[id];
+      const hex = document.getElementById(id + '_hex');
+      if (hex) hex.textContent = el.value;
+    });
+    cmapIds.forEach(id => {
+      const el = document.getElementById(id);
+      for (const opt of el.options) {
+        if (opt.value === src[id]) { opt.selected = true; break; }
+      }
+    });
+    (function() {
+      const el = document.getElementById('pend_lce_eps');
+      const val = parseFloat(src['pend_lce_eps']);
+      let matched = false;
+      for (const opt of el.options) {
+        if (Math.abs(parseFloat(opt.value) - val) < val * 0.01) { opt.selected = true; matched = true; break; }
+      }
+      if (!matched) el.options[2].selected = true;
+    })();
+    numberIds.forEach(id => { document.getElementById(id).value = src[id]; });
+    rangeIds.forEach(id => {
+      const el = document.getElementById(id);
+      el.value = src[id];
+      const valEl = document.getElementById(id + '_val');
+      if (valEl) valEl.textContent = el.value;
+    });
+    checkIds.forEach(id => { document.getElementById(id).checked = !!src[id]; });
+  }
+
+  // Reset button
+  document.getElementById('btnReset').addEventListener('click', () => {
+    if (!confirm('Reset all settings to defaults?')) return;
+    reset();
+    repopulate(DEFAULTS);
+    showSaved();
+  });
+</script>
+</body>
+</html>
