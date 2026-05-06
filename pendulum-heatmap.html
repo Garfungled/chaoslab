@@ -54,17 +54,69 @@
     <div id="loadingMsg" class="notice">Loading heatmap data…</div>
   </div>
 
-  <!-- n=3 content (placeholder) -->
+  <!-- n=3 content -->
   <div id="section3" style="display:none">
     <p class="page-subtitle">
-      \(\theta_1, \theta_2, \theta_3 \in [0,\,2\pi]\) · d×d×s grid with θ₃ slider · color = LCE
+      1000×1000×50 grid · \(\theta_1,\theta_2,\theta_3 \in [0,\,2\pi]\) · color = LCE ·
+      <strong>drag θ₃ slider · click to simulate</strong>
     </p>
-    <div class="notice" style="text-align:center;padding:2rem 1rem">
-      <strong>Triple pendulum heatmap data not yet generated.</strong><br>
-      <span style="color:var(--text-light);font-family:var(--font-ui);font-size:0.85rem">
-        Run <code>python nPendulum/heatmap.py --n 3 --res 300 --slices 20</code> to generate data,
-        then convert to a web binary and place in <code>data/pendulum_heatmap_n3.bin</code>.
-      </span>
+    <div id="loadingMsg3" class="notice">Loading triple pendulum heatmap…</div>
+
+    <div id="heatmapSection3" style="display:none">
+      <!-- Heatmap row -->
+      <div style="display:flex;gap:0.75rem;align-items:flex-start;justify-content:center">
+        <div class="axis-y-label" style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--font-ui);font-size:0.75rem;color:var(--text-light);align-self:center">θ₁ (rad)</div>
+        <div>
+          <div class="heatmap-block">
+            <canvas id="hmCanvas3" class="heatmap-canvas"
+                    width="700" height="700"
+                    style="width:700px;height:700px;display:block"></canvas>
+            <div class="heatmap-tooltip" id="tooltip3"></div>
+          </div>
+          <div class="axis-x-label">θ₂ (rad)</div>
+          <!-- θ₃ slider -->
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.5rem;font-family:var(--font-ui);font-size:0.82rem">
+            <label for="theta3Slider" style="white-space:nowrap;color:var(--text-light)">θ₃ slice:</label>
+            <input type="range" id="theta3Slider" min="0" step="1" value="0"
+                   style="flex:1;accent-color:var(--accent-dark)">
+            <span id="theta3Val" style="min-width:70px;font-family:var(--font-code);font-size:0.8rem;color:var(--text-light)">0.000 rad</span>
+          </div>
+        </div>
+        <div class="colorbar-col">
+          <div class="cb-label-text">Max Lyapunov Exponent</div>
+          <div style="display:flex;gap:4px;height:700px">
+            <canvas class="colorbar-canvas" id="colorbar3" height="700" style="width:18px"></canvas>
+            <div class="cb-labels" id="cbLabels3"></div>
+          </div>
+        </div>
+      </div>
+
+      <hr>
+
+      <!-- Simulation row -->
+      <div style="display:flex;gap:1.25rem;justify-content:center;align-items:flex-start">
+        <div>
+          <div class="sim-canvas-wrap" style="background:#fff;">
+            <canvas id="inlineCanvas3" width="520" height="520"></canvas>
+          </div>
+        </div>
+        <div class="sim-controls" style="min-width:220px;max-width:260px">
+          <h3>Selected point</h3>
+          <div class="clicked-info" id="clickedInfo3">Click a pixel above to select.</div>
+          <div class="lce-readout" id="lceReadout3" style="margin-top:0.5rem">LCE = —</div>
+          <div class="btn-row mt2">
+            <button class="btn-primary"   id="btnPlay3">▶ Play</button>
+            <button class="btn-secondary" id="btnStop3">⏹ Stop</button>
+            <button class="btn-secondary" id="btnReset3">↺ Reset</button>
+          </div>
+          <hr>
+          <div class="sidebar-box" style="font-family:var(--font-ui);font-size:0.82rem;border:none;padding:0;box-shadow:none">
+            <h4>Reading the heatmap</h4>
+            <p><strong>Dark purple</strong> — low LCE, near-periodic</p>
+            <p><strong>Yellow</strong> — high LCE, strongly chaotic</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -224,6 +276,112 @@
 
   init().catch(e => { document.getElementById('loadingMsg').textContent = 'Error: ' + e.message; });
 
+  // ── n=3 heatmap ────────────────────────────────────────────────────────────
+  import { loadBin3D } from './js/heatmap.js';
+
+  let n3loaded = false;
+
+  async function init3() {
+    if (n3loaded) return;
+    n3loaded = true;
+
+    const BIN_URL = 'data/pendulum_heatmap_n3_1000x1000x50.bin';
+    let n3data;
+    try {
+      n3data = await loadBin3D(BIN_URL);
+    } catch (e) {
+      document.getElementById('loadingMsg3').textContent = 'Error loading: ' + e.message;
+      return;
+    }
+
+    const { nSlices, rows, cols, data } = n3data;
+    document.getElementById('loadingMsg3').style.display = 'none';
+    document.getElementById('heatmapSection3').style.display = 'block';
+
+    // Colour scale from full dataset
+    const pos  = Array.from(data).filter(v => v > 0).sort((a,b) => a-b);
+    const vmin = pos[Math.floor(pos.length * 0.05)] ?? 0;
+    const vmax = pos[Math.floor(pos.length * 0.99)] ?? 1;
+
+    const cmapFn = getColormap(get('hm_pend_cmap') ?? 'viridis');
+
+    const cbCanvas3 = document.getElementById('colorbar3');
+    renderColorbar(cbCanvas3, vmin, vmax, 200, cmapFn);
+    const cbLabels3 = document.getElementById('cbLabels3');
+    [vmax, (vmin+vmax)/2, vmin].forEach(v => {
+      const d = document.createElement('div'); d.textContent = v.toFixed(2); cbLabels3.appendChild(d);
+    });
+
+    // Slice angle values (linspace 0…2π, endpoint=False)
+    const sliceAngles = Array.from({length: nSlices}, (_, k) => k / nSlices * TWO_PI);
+
+    // Pre-render a single slice into an offscreen canvas
+    function renderSlice(k) {
+      const sliceData = data.subarray(k * rows * cols, (k + 1) * rows * cols);
+      return prerender(sliceData, rows, cols, cmapFn);
+    }
+
+    // Initial render (slice 0)
+    let currentSlice = 0;
+    let { offscreen: off3 } = renderSlice(0);
+
+    const hmCanvas3 = document.getElementById('hmCanvas3');
+    const interaction3 = attachInteraction(
+      hmCanvas3, off3, data.subarray(0, rows * cols), rows, cols,
+      { xMin: 0, xMax: TWO_PI, yMin: 0, yMax: TWO_PI },
+      null,
+      (x, y, lce) => {
+        const t3 = sliceAngles[currentSlice];
+        lastThetas3 = [y, x, t3];
+        document.getElementById('clickedInfo3').innerHTML =
+          `θ₁ = ${y.toFixed(4)}<br>θ₂ = ${x.toFixed(4)}<br>` +
+          `θ₃ = ${t3.toFixed(4)}<br>LCE = ${lce.toFixed(5)}`;
+        sim3.stop();
+        sim3.reset(lastThetas3);
+        sim3.start();
+        btnPlay3.textContent = '⏸ Pause';
+      }
+    );
+
+    // Slider
+    const slider3  = document.getElementById('theta3Slider');
+    const theta3El = document.getElementById('theta3Val');
+    slider3.max = nSlices - 1;
+
+    let renderTimer = null;
+    slider3.addEventListener('input', () => {
+      const k = parseInt(slider3.value);
+      theta3El.textContent = sliceAngles[k].toFixed(3) + ' rad';
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => {
+        currentSlice = k;
+        const sliceData = data.subarray(k * rows * cols, (k + 1) * rows * cols);
+        const { offscreen: newOff } = prerender(sliceData, rows, cols, cmapFn);
+        interaction3.updateOffscreen(newOff);
+      }, 60);
+    });
+
+    // Sim
+    const inlineCanvas3 = document.getElementById('inlineCanvas3');
+    const sim3 = new PendulumSim(inlineCanvas3, 3);
+    sim3.onLCE = lce => { document.getElementById('lceReadout3').textContent = `LCE = ${lce.toFixed(5)}`; };
+    const btnPlay3 = document.getElementById('btnPlay3');
+    let lastThetas3 = null;
+
+    btnPlay3.addEventListener('click', () => {
+      if (sim3.running) { sim3.stop(); btnPlay3.textContent = '▶ Play'; }
+      else              { sim3.start(); btnPlay3.textContent = '⏸ Pause'; }
+    });
+    document.getElementById('btnStop3').addEventListener('click', () => {
+      sim3.stop(); btnPlay3.textContent = '▶ Play';
+    });
+    document.getElementById('btnReset3').addEventListener('click', () => {
+      if (!lastThetas3) return;
+      sim3.stop(); sim3.reset(lastThetas3); sim3.start();
+      btnPlay3.textContent = '⏸ Pause';
+    });
+  }
+
   // n=2 / n=3 toggle
   const btnN2 = document.getElementById('btnN2');
   const btnN3 = document.getElementById('btnN3');
@@ -241,6 +399,7 @@
     document.getElementById('heatmapSection').style.display = 'none';
     btnN2.className = 'btn-secondary';
     btnN3.className = 'btn-primary';
+    init3();   // lazy-load on first click
   });
 </script>
 </body>

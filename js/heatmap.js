@@ -36,6 +36,39 @@ export async function loadBin(url) {
   return { rows: hdr[0], cols: hdr[1], data: new Float32Array(buf, 8) };
 }
 
+// Load a 3-D heatmap binary (n_slices × rows × cols float32).
+// Part-0 header: int32 n_slices, int32 rows, int32 cols, int32 n_parts (16 bytes).
+// Subsequent parts have no header — raw float32 data only.
+export async function loadBin3D(url) {
+  const part0url = url.replace(/\.bin$/, '.part0.bin');
+  const r0 = await fetch(part0url);
+
+  if (r0.ok) {
+    const buf0   = await r0.arrayBuffer();
+    const hdr    = new Int32Array(buf0, 0, 4);   // nSlices, rows, cols, nParts
+    const [nSlices, rows, cols, nParts] = hdr;
+
+    const restBufs = await Promise.all(
+      Array.from({ length: nParts - 1 }, (_, i) =>
+        fetch(url.replace(/\.bin$/, `.part${i + 1}.bin`)).then(r => r.arrayBuffer())
+      )
+    );
+
+    const parts = [new Float32Array(buf0, 16), ...restBufs.map(b => new Float32Array(b))];
+    const total = parts.reduce((s, p) => s + p.length, 0);
+    const data  = new Float32Array(total);
+    let   off   = 0;
+    for (const p of parts) { data.set(p, off); off += p.length; }
+    return { nSlices, rows, cols, data };
+  }
+
+  // Single file
+  const resp = await fetch(url);
+  const buf  = await resp.arrayBuffer();
+  const hdr  = new Int32Array(buf, 0, 3);
+  return { nSlices: hdr[0], rows: hdr[1], cols: hdr[2], data: new Float32Array(buf, 12) };
+}
+
 // Pre-render the full heatmap to an OffscreenCanvas or regular canvas
 export function prerender(data, rows, cols, cmapFn = viridis) {
   const off = document.createElement('canvas');
