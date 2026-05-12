@@ -315,19 +315,30 @@
     // Slice angle values (linspace 0…2π, endpoint=False)
     const sliceAngles = Array.from({length: nSlices}, (_, k) => k / nSlices * TWO_PI);
 
-    // Pre-render a single slice into an offscreen canvas
+    // Pre-render slice k using the global colour range so all slices are comparable
     function renderSlice(k) {
-      const sliceData = data.subarray(k * rows * cols, (k + 1) * rows * cols);
-      return prerender(sliceData, rows, cols, cmapFn);
+      return prerender(data.subarray(k * rows * cols, (k + 1) * rows * cols),
+                       rows, cols, cmapFn, vmin, vmax);
     }
+
+    // Cache all slices up front — renders one per animation frame so the UI
+    // stays responsive. Once cached, slider swaps are instant.
+    const cachedOffscreens = new Array(nSlices).fill(null);
+    cachedOffscreens[0] = renderSlice(0).offscreen;  // slice 0 needed immediately
+
+    (async () => {
+      for (let k = 1; k < nSlices; k++) {
+        cachedOffscreens[k] = renderSlice(k).offscreen;
+        await new Promise(r => setTimeout(r, 0));     // yield to keep UI live
+      }
+    })();
 
     // Initial render (slice 0)
     let currentSlice = 0;
-    let { offscreen: off3 } = renderSlice(0);
 
     const hmCanvas3 = document.getElementById('hmCanvas3');
     const interaction3 = attachInteraction(
-      hmCanvas3, off3, data.subarray(0, rows * cols), rows, cols,
+      hmCanvas3, cachedOffscreens[0], data.subarray(0, rows * cols), rows, cols,
       { xMin: 0, xMax: TWO_PI, yMin: 0, yMax: TWO_PI },
       null,
       (x, y, lce) => {
@@ -343,22 +354,18 @@
       }
     );
 
-    // Slider
+    // Slider — instant swap from cache; falls back to on-demand if not yet ready
     const slider3  = document.getElementById('theta3Slider');
     const theta3El = document.getElementById('theta3Val');
     slider3.max = nSlices - 1;
 
-    let renderTimer = null;
     slider3.addEventListener('input', () => {
       const k = parseInt(slider3.value);
       theta3El.textContent = sliceAngles[k].toFixed(3) + ' rad';
-      clearTimeout(renderTimer);
-      renderTimer = setTimeout(() => {
-        currentSlice = k;
-        const sliceData = data.subarray(k * rows * cols, (k + 1) * rows * cols);
-        const { offscreen: newOff } = prerender(sliceData, rows, cols, cmapFn);
-        interaction3.updateOffscreen(newOff);
-      }, 60);
+      currentSlice = k;
+      const off = cachedOffscreens[k] ?? renderSlice(k).offscreen;
+      if (!cachedOffscreens[k]) cachedOffscreens[k] = off;
+      interaction3.updateOffscreen(off);
     });
 
     // Sim

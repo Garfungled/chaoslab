@@ -76,16 +76,23 @@ export async function loadBin3D(url) {
   return { nSlices: hdr[0], rows: hdr[1], cols: hdr[2], data: new Float32Array(buf, 12) };
 }
 
-// Pre-render the full heatmap to an OffscreenCanvas or regular canvas
-export function prerender(data, rows, cols, cmapFn = viridis) {
+// Pre-render the full heatmap to an OffscreenCanvas or regular canvas.
+// Pass vminIn/vmaxIn to reuse an already-computed colour range (e.g. when
+// rendering many slices of a 3-D dataset so all share the same scale).
+export function prerender(data, rows, cols, cmapFn = viridis, vminIn = null, vmaxIn = null) {
   const off = document.createElement('canvas');
   off.width = cols; off.height = rows;
   const ctx = off.getContext('2d');
   const img = ctx.createImageData(cols, rows);
 
-  const pos = Array.from(data).filter(v => v > 0).sort((a,b) => a-b);
-  const vmin = pos[Math.floor(pos.length * 0.05)] ?? 0;
-  const vmax = pos[Math.floor(pos.length * 0.99)] ?? 1;
+  let vmin, vmax;
+  if (vminIn !== null && vmaxIn !== null) {
+    vmin = vminIn; vmax = vmaxIn;
+  } else {
+    const pos = Array.from(data).filter(v => v > 0).sort((a,b) => a-b);
+    vmin = pos[Math.floor(pos.length * 0.05)] ?? 0;
+    vmax = pos[Math.floor(pos.length * 0.99)] ?? 1;
+  }
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
