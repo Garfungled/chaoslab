@@ -282,17 +282,20 @@
     if (n3loaded) return;
     n3loaded = true;
 
+    const loadMsg = document.getElementById('loadingMsg3');
+    loadMsg.style.display = 'block';
+    loadMsg.textContent = '⏳ Downloading heatmap data — 1000×1000×50 slices (~200 MB), may take 20–60 s…';
+
     const BIN_URL = 'data/pendulum_heatmap_n3_1000x1000x50.bin';
     let n3data;
     try {
       n3data = await loadBin3D(BIN_URL);
     } catch (e) {
-      document.getElementById('loadingMsg3').textContent = 'Error loading: ' + e.message;
+      loadMsg.textContent = 'Error loading: ' + e.message;
       return;
     }
 
     const { nSlices, rows, cols, data } = n3data;
-    document.getElementById('loadingMsg3').style.display = 'none';
     document.getElementById('heatmapSection3').style.display = 'block';
     document.getElementById('subtitle3').innerHTML =
       `${rows}×${cols}×${nSlices} grid &middot; \\(\\theta_1,\\theta_2,\\theta_3 \\in [0,\\,2\\pi]\\) &middot; color = LCE &middot; ` +
@@ -321,17 +324,29 @@
                        rows, cols, cmapFn, vmin, vmax);
     }
 
-    // Cache all slices up front — renders one per animation frame so the UI
-    // stays responsive. Once cached, slider swaps are instant.
+    // Cache all slices — pre-render slice 0 immediately, rest via
+    // requestIdleCallback so background work never blocks slider input.
     const cachedOffscreens = new Array(nSlices).fill(null);
-    cachedOffscreens[0] = renderSlice(0).offscreen;  // slice 0 needed immediately
+    cachedOffscreens[0] = renderSlice(0).offscreen;
 
-    (async () => {
-      for (let k = 1; k < nSlices; k++) {
-        cachedOffscreens[k] = renderSlice(k).offscreen;
-        await new Promise(r => setTimeout(r, 0));     // yield to keep UI live
+    loadMsg.style.display = 'block';
+    loadMsg.textContent = `Pre-rendering slices 1 / ${nSlices} — you can use the slider now`;
+
+    const _idle = window.requestIdleCallback
+      ? fn => requestIdleCallback(fn, { timeout: 500 })
+      : fn => setTimeout(() => fn({ timeRemaining: () => 50 }), 0);
+
+    let _pi = 1;
+    function _preNext(deadline) {
+      while (_pi < nSlices && deadline.timeRemaining() > 4) {
+        cachedOffscreens[_pi] = renderSlice(_pi).offscreen;
+        _pi++;
       }
-    })();
+      loadMsg.textContent = `Pre-rendering slices ${_pi} / ${nSlices}`;
+      if (_pi < nSlices) { _idle(_preNext); }
+      else                { loadMsg.style.display = 'none'; }
+    }
+    _idle(_preNext);
 
     // Initial render (slice 0)
     let currentSlice = 0;
@@ -354,18 +369,31 @@
       }
     );
 
-    // Slider — instant swap from cache; falls back to on-demand if not yet ready
+    // Slider — animates through every intermediate frame so motion is smooth.
+    // Speed scales with distance: 1 frame/tick when close, faster when far.
     const slider3  = document.getElementById('theta3Slider');
     const theta3El = document.getElementById('theta3Val');
     slider3.max = nSlices - 1;
 
-    slider3.addEventListener('input', () => {
-      const k = parseInt(slider3.value);
-      theta3El.textContent = sliceAngles[k].toFixed(3) + ' rad';
-      currentSlice = k;
-      const off = cachedOffscreens[k] ?? renderSlice(k).offscreen;
-      if (!cachedOffscreens[k]) cachedOffscreens[k] = off;
+    let targetSlice  = 0;
+    let _animFrameId = null;
+
+    function _stepToTarget() {
+      if (currentSlice === targetSlice) { _animFrameId = null; return; }
+      const dist  = Math.abs(targetSlice - currentSlice);
+      const step  = Math.sign(targetSlice - currentSlice) * Math.max(1, Math.ceil(dist / 8));
+      currentSlice = Math.round(currentSlice + step);
+      if (Math.sign(targetSlice - currentSlice) !== Math.sign(step)) currentSlice = targetSlice;
+      const off = cachedOffscreens[currentSlice] ?? renderSlice(currentSlice).offscreen;
+      if (!cachedOffscreens[currentSlice]) cachedOffscreens[currentSlice] = off;
       interaction3.updateOffscreen(off);
+      _animFrameId = requestAnimationFrame(_stepToTarget);
+    }
+
+    slider3.addEventListener('input', () => {
+      targetSlice = parseInt(slider3.value);
+      theta3El.textContent = sliceAngles[targetSlice].toFixed(3) + ' rad';
+      if (!_animFrameId) _animFrameId = requestAnimationFrame(_stepToTarget);
     });
 
     // Sim
