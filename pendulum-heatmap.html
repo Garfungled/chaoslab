@@ -82,10 +82,10 @@
           </div>
         </div>
         <div class="colorbar-col">
-          <div class="cb-label-text">Max Lyapunov Exponent</div>
-          <div style="display:flex;gap:4px;height:700px">
+          <div style="display:flex;gap:4px;height:700px;align-items:center">
             <canvas class="colorbar-canvas" id="colorbar3" height="700" style="width:18px"></canvas>
             <div class="cb-labels" id="cbLabels3"></div>
+            <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--font-ui);font-size:0.75rem;color:var(--text-light);white-space:nowrap;margin-left:4px">Max Lyapunov Exponent</div>
           </div>
         </div>
       </div>
@@ -134,10 +134,10 @@
         <div class="zoom-hint">Scroll: zoom · Drag: pan · Double-click: reset view</div>
       </div>
       <div class="colorbar-col">
-        <div class="cb-label-text">Max Lyapunov Exponent</div>
-        <div style="display:flex;gap:4px;height:700px">
+        <div style="display:flex;gap:4px;height:700px;align-items:center">
           <canvas class="colorbar-canvas" id="colorbar" height="700" style="width:18px"></canvas>
           <div class="cb-labels" id="cbLabels"></div>
+          <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--font-ui);font-size:0.75rem;color:var(--text-light);white-space:nowrap;margin-left:4px">Max Lyapunov Exponent</div>
         </div>
       </div>
     </div>
@@ -282,7 +282,7 @@
     if (n3loaded) return;
     n3loaded = true;
 
-    const BIN_URL = 'data/pendulum_heatmap_n3_200x200x50.bin';
+    const BIN_URL = 'data/pendulum_heatmap_n3_1000x1000x50.bin';
     let n3data;
     try {
       n3data = await loadBin3D(BIN_URL);
