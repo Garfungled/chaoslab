@@ -1,21 +1,48 @@
 // Heatmap loader, renderer with zoom/pan, colormap, click/hover
 import { viridis, normLCE } from './utils.js';
 
+// ── Cache API wrapper ────────────────────────────────────────────────────────
+const CACHE_NAME = 'chaoslab-heatmaps-v1';
+
+// Fetch a URL, serving from the Cache API if available.
+// Falls back to plain fetch if the Cache API is unavailable (e.g. file://).
+async function _cachedFetch(url) {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const hit   = await cache.match(url);
+    if (hit) return hit;
+    const resp  = await fetch(url);
+    if (resp.ok) cache.put(url, resp.clone());  // store for next visit
+    return resp;
+  } catch {
+    return fetch(url);
+  }
+}
+
+// Returns true if the primary part of a heatmap URL is already cached locally.
+export async function isHeatmapCached(url) {
+  try {
+    const cache    = await caches.open(CACHE_NAME);
+    const part0url = url.replace(/\.bin$/, '.part0.bin');
+    return !!(await cache.match(part0url) || await cache.match(url));
+  } catch { return false; }
+}
+
 export async function loadBin(url) {
   // Try chunked format first (.part0.bin).
   // Files > 90 MB are split by website/scripts/split_large_bins.py.
   const part0url = url.replace(/\.bin$/, '.part0.bin');
-  const r0 = await fetch(part0url);
+  const r0 = await _cachedFetch(part0url);
 
   if (r0.ok) {
     const buf0   = await r0.arrayBuffer();
     const hdr    = new Int32Array(buf0, 0, 3);          // rows, cols, nParts
     const rows   = hdr[0], cols = hdr[1], nParts = hdr[2];
 
-    // Fetch all remaining parts in parallel
+    // Fetch all remaining parts in parallel (via cache)
     const restBufs = await Promise.all(
       Array.from({ length: nParts - 1 }, (_, i) =>
-        fetch(url.replace(/\.bin$/, `.part${i + 1}.bin`)).then(r => r.arrayBuffer())
+        _cachedFetch(url.replace(/\.bin$/, `.part${i + 1}.bin`)).then(r => r.arrayBuffer())
       )
     );
 
@@ -30,7 +57,7 @@ export async function loadBin(url) {
   }
 
   // Single-file format (original, for files ≤ 90 MB)
-  const resp = await fetch(url);
+  const resp = await _cachedFetch(url);
   const buf  = await resp.arrayBuffer();
   const hdr  = new Int32Array(buf, 0, 2);
   return { rows: hdr[0], cols: hdr[1], data: new Float32Array(buf, 8) };
@@ -41,17 +68,17 @@ export async function loadBin(url) {
 // Subsequent parts have no header — raw float32 data only.
 export async function loadBin3D(url) {
   const part0url = url.replace(/\.bin$/, '.part0.bin');
-  const r0 = await fetch(part0url);
+  const r0 = await _cachedFetch(part0url);
 
   if (r0.ok) {
     const buf0   = await r0.arrayBuffer();
     const hdr    = new Int32Array(buf0, 0, 4);   // nSlices, rows, cols, nParts
     const [nSlices, rows, cols, nParts] = hdr;
 
-    // Fetch remaining parts, checking each response before reading bytes
+    // Fetch remaining parts via cache, checking each response before reading bytes
     const restResps = await Promise.all(
       Array.from({ length: nParts - 1 }, (_, i) =>
-        fetch(url.replace(/\.bin$/, `.part${i + 1}.bin`))
+        _cachedFetch(url.replace(/\.bin$/, `.part${i + 1}.bin`))
       )
     );
     for (const r of restResps) {
@@ -68,7 +95,7 @@ export async function loadBin3D(url) {
   }
 
   // Single file — check status before reading bytes to avoid HTML-body alignment errors
-  const resp = await fetch(url);
+  const resp = await _cachedFetch(url);
   if (!resp.ok) throw new Error(
     `Data file not found (${resp.status}). Run:  python docs/scripts/convert_n3_heatmap.py`);
   const buf = await resp.arrayBuffer();

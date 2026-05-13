@@ -71,13 +71,13 @@ export class NBodySim {
     this._trail.width  = canvas.width;
     this._trail.height = canvas.height;
     this._trailCtx = this._trail.getContext('2d');
-    this._prevPts  = null;
+    this._trailWorld = [];   // world-space trail storage: one Float64Array-like [] per body
     this._clearTrail();
   }
 
   _clearTrail() {
     this._trailCtx.clearRect(0, 0, this._trail.width, this._trail.height);
-    this._prevPts = null;
+    this._trailWorld = Array.from({ length: this.n }, () => []);
   }
 
   reset(positions, velocities) {
@@ -143,7 +143,6 @@ export class NBodySim {
       const prevScale = this.scale;
       if (maxExtent * this.scale > safePx) {
         this.scale = Math.max(0.001, safePx / maxExtent);
-        if (Math.abs(this.scale - prevScale) / prevScale > 0.015) this._clearTrail();
       } else if (maxExtent * this.scale < safePx * 0.55 && this.scale < this._initialScale) {
         this.scale = Math.min(this._initialScale, this.scale * 1.001);
       }
@@ -206,20 +205,30 @@ export class NBodySim {
       ctx.fillText('(0, 0)', ox + 5, oy - 4);
     }
 
-    // Trails
-    const currPts = [];
-    for (let i = 0; i < n; i++) currPts.push([toSx(state[4*i]), toSy(state[4*i+1])]);
-    if (this._prevPts) {
-      for (let i = 0; i < n; i++) {
-        this._trailCtx.beginPath();
-        this._trailCtx.moveTo(this._prevPts[i][0], this._prevPts[i][1]);
-        this._trailCtx.lineTo(currPts[i][0], currPts[i][1]);
-        this._trailCtx.strokeStyle = bodyColor(i, n, 0.55);
-        this._trailCtx.lineWidth   = 1.5;
-        this._trailCtx.stroke();
-      }
+    // Trails — stored in world coordinates so they stay fixed in space
+    // regardless of COM drift or zoom changes.
+    const MAX_TRAIL = 1500;
+    if (!this._trailWorld || this._trailWorld.length !== n)
+      this._trailWorld = Array.from({ length: n }, () => []);
+    for (let i = 0; i < n; i++) {
+      const pts = this._trailWorld[i];
+      pts.push(state[4*i], state[4*i+1]);
+      if (pts.length > MAX_TRAIL * 2) pts.splice(0, pts.length - MAX_TRAIL * 2);
     }
-    this._prevPts = currPts;
+
+    // Redraw trail canvas each frame from world coords using the current transform
+    this._trailCtx.clearRect(0, 0, this._trail.width, this._trail.height);
+    for (let i = 0; i < n; i++) {
+      const pts = this._trailWorld[i];
+      if (pts.length < 4) continue;
+      this._trailCtx.strokeStyle = bodyColor(i, n, 0.55);
+      this._trailCtx.lineWidth   = 1.5;
+      this._trailCtx.beginPath();
+      this._trailCtx.moveTo(toSx(pts[0]), toSy(pts[1]));
+      for (let j = 2; j < pts.length; j += 2)
+        this._trailCtx.lineTo(toSx(pts[j]), toSy(pts[j+1]));
+      this._trailCtx.stroke();
+    }
 
     ctx.globalAlpha = 0.9;
     ctx.drawImage(this._trail, 0, 0);
