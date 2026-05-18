@@ -6,6 +6,65 @@
   <title>N-Body Simulator — Chaos Lab</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+  <style>
+    /* ── Body panels ── */
+    #bodyControls { max-height: 380px; overflow-y: auto; padding-right: 2px; }
+    .body-panel {
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 0.45rem 0.6rem;
+      margin-bottom: 0.35rem;
+      background: var(--card-bg);
+    }
+    .body-header {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.82rem; font-weight: 600; margin-bottom: 0.3rem;
+      font-family: var(--font-ui);
+    }
+    .body-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+    .body-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.2rem 0.5rem;
+    }
+    .body-grid label {
+      display: flex; align-items: center; gap: 0.3rem;
+      font-size: 0.76rem; color: var(--text-light);
+      font-family: var(--font-code);
+    }
+    .body-grid label span { min-width: 1.5rem; }
+    .body-grid input[type=number] {
+      flex: 1; min-width: 0;
+      font-size: 0.75rem; font-family: var(--font-code);
+      padding: 0.15rem 0.25rem;
+      border: 1px solid var(--border); border-radius: 3px;
+      background: var(--bg); color: var(--text);
+    }
+    /* ── N selector ── */
+    .n-row {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .n-row label { font-family: var(--font-ui); font-size: 0.85rem; }
+    .n-btn {
+      width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--border);
+      background: var(--card-bg); color: var(--text); cursor: pointer;
+      font-size: 1rem; line-height: 1; display: flex; align-items: center; justify-content: center;
+    }
+    .n-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    #nDisplay {
+      min-width: 2rem; text-align: center;
+      font-family: var(--font-code); font-size: 1rem; font-weight: 700;
+    }
+    /* ── Preset chips ── */
+    #presetRow { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    /* ── Velocity hint ── */
+    #velHint { font-size: 0.76rem; color: var(--text-light);
+               font-family: var(--font-ui); margin-top: 0.3rem; }
+  </style>
 </head>
 <body>
 <header>
@@ -39,52 +98,46 @@
   <p class="page-subtitle">G = 1 · all masses = 1 · softening = 0.01 · camera follows center of mass</p>
 
   <div class="sim-layout">
+    <!-- Canvas -->
     <div>
       <div class="sim-canvas-wrap">
         <canvas id="nbodyCanvas" width="500" height="500"></canvas>
       </div>
     </div>
 
+    <!-- Controls -->
     <div class="sim-controls">
-      <h3>Initial conditions</h3>
 
-      <div class="control-group">
-        <label>Separation r <span id="rVal">2.00</span></label>
-        <input type="range" id="rSlider" min="0.5" max="5.0" step="0.05" value="2.0">
-      </div>
-      <div class="control-group">
-        <label>Body 1 vx <span id="vxVal">0.000</span></label>
-        <input type="range" id="vxSlider" min="-2.0" max="2.0" step="0.005" value="0.0">
-      </div>
-      <div class="control-group">
-        <label>Body 1 vy <span id="vyVal">0.500</span></label>
-        <input type="range" id="vySlider" min="-2.0" max="2.0" step="0.005" value="0.5">
+      <!-- N selector -->
+      <div class="n-row">
+        <label>Bodies:</label>
+        <button class="n-btn" id="btnNDec">−</button>
+        <span id="nDisplay">2</span>
+        <button class="n-btn" id="btnNInc">+</button>
       </div>
 
-      <div class="notice" style="margin-top:0.5rem;font-size:0.78rem">
-        v<sub>circ</sub> = <span id="vcircVal">—</span> &nbsp;·&nbsp;
-        v<sub>esc</sub> = <span id="vescVal">—</span>
-      </div>
+      <!-- Per-body panels -->
+      <div id="bodyControls"></div>
 
-      <div class="btn-row">
+      <!-- Velocity reference -->
+      <div id="velHint"></div>
+
+      <!-- Action buttons -->
+      <div class="btn-row" style="margin-top:0.6rem">
         <button class="btn-primary"   id="btnPlay">▶ Play</button>
         <button class="btn-secondary" id="btnReset">↺ Reset</button>
       </div>
 
       <hr>
-      <h3 style="margin-top:0">Presets</h3>
-      <div class="btn-row" style="flex-wrap:wrap">
-        <button class="btn-secondary preset" data-preset="circular">Circular</button>
-        <button class="btn-secondary preset" data-preset="elliptical">Elliptical</button>
-        <button class="btn-secondary preset" data-preset="escape">Escape</button>
-        <button class="btn-secondary preset" data-preset="figure8">Figure-8</button>
-      </div>
+
+      <!-- Presets -->
+      <h3 style="margin-top:0;margin-bottom:0.4rem">Presets</h3>
+      <div id="presetRow"></div>
 
       <hr>
-      <p style="font-family:var(--font-ui);font-size:0.79rem;color:var(--text-light)">
-        Body 0 at \((-r/2,\,0)\) at rest.
-        Body 1 at \((r/2,\,0)\) with \((vx,\,vy)\).
-        Camera tracks center of mass. Grid = 1 world unit.
+      <p style="font-family:var(--font-ui);font-size:0.78rem;color:var(--text-light);margin:0">
+        Scroll to zoom · Drag to pan · Double-click to reset view.<br>
+        Edit x, y, vx, vy per body and press ↺ Reset to apply.
       </p>
     </div>
   </div>
@@ -93,72 +146,190 @@
 <footer><p>Zachary Medjamia · Andover High School Capstone 2026</p></footer>
 
 <script type="module">
-  import { NBodySim } from './js/nbody-sim.js';
+import { NBodySim } from './js/nbody-sim.js';
 
-  const canvas   = document.getElementById('nbodyCanvas');
-  const sim      = new NBodySim(canvas);
-  const rSlider  = document.getElementById('rSlider');
-  const vxSlider = document.getElementById('vxSlider');
-  const vySlider = document.getElementById('vySlider');
+const canvas  = document.getElementById('nbodyCanvas');
+const sim     = new NBodySim(canvas);
+const btnPlay = document.getElementById('btnPlay');
 
-  function updateLabels() {
-    const r = parseFloat(rSlider.value);
-    document.getElementById('rVal').textContent  = r.toFixed(2);
-    document.getElementById('vxVal').textContent = parseFloat(vxSlider.value).toFixed(3);
-    document.getElementById('vyVal').textContent = parseFloat(vySlider.value).toFixed(3);
-    document.getElementById('vcircVal').textContent = Math.sqrt(1/(2*r)).toFixed(3);
-    document.getElementById('vescVal').textContent  = Math.sqrt(2/r).toFixed(3);
-  }
-  [rSlider, vxSlider, vySlider].forEach(s => s.addEventListener('input', updateLabels));
+// ── Body colour (mirrors nbody-sim.js hsvToRgb) ───────────────────────────────
+function bodyCSS(i, n) {
+  const h = (i / n) * 360;
+  return `hsl(${h.toFixed(0)},72%,55%)`;
+}
 
-  function getState() {
-    return { r: parseFloat(rSlider.value), vx: parseFloat(vxSlider.value), vy: parseFloat(vySlider.value) };
-  }
+// ── Orbital velocity for N equal masses on a circle of radius r ───────────────
+// Derived from centripetal balance: v = sqrt( sum_{k=1}^{N-1} 1/sin(kπ/N) / (4r) )
+function orbitalV(n, r) {
+  if (n < 2) return 0;
+  let s = 0;
+  for (let k = 1; k < n; k++) s += 1 / Math.sin(Math.PI * k / n);
+  return Math.sqrt(s / (4 * r));
+}
 
-  function applyAndPlay() {
-    const { r, vx, vy } = getState();
-    sim.scale = Math.min(120, 100 / r * 1.5);
-    sim.stop();
-    sim.reset([[-r/2, 0], [r/2, 0]], [[0, 0], [vx, vy]]);
-    sim.start();
-    document.getElementById('btnPlay').textContent = '⏸ Pause';
-  }
-
-  document.getElementById('btnPlay').addEventListener('click', () => {
-    if (sim.running) {
-      sim.stop();
-      document.getElementById('btnPlay').textContent = '▶ Play';
-    } else {
-      sim.start();
-      document.getElementById('btnPlay').textContent = '⏸ Pause';
-    }
+// ── Default symmetric polygon layout ─────────────────────────────────────────
+function symmetricBodies(n, r = 2.0) {
+  const v = orbitalV(n, r);
+  return Array.from({ length: n }, (_, i) => {
+    const a = (2 * Math.PI * i) / n - Math.PI / 2; // start at top
+    return { x: r * Math.cos(a), y: r * Math.sin(a),
+             vx: -v * Math.sin(a), vy: v * Math.cos(a) };
   });
+}
 
-  document.getElementById('btnReset').addEventListener('click', () => {
-    applyAndPlay();
+// ── Build per-body input panels ───────────────────────────────────────────────
+function buildControls(n, bodies) {
+  const container = document.getElementById('bodyControls');
+  container.innerHTML = '';
+  bodies = bodies || symmetricBodies(n);
+
+  for (let i = 0; i < n; i++) {
+    const b   = bodies[i] || { x: 0, y: 0, vx: 0, vy: 0 };
+    const col = bodyCSS(i, n);
+    const div = document.createElement('div');
+    div.className = 'body-panel';
+    div.dataset.bodyIdx = i;
+    div.innerHTML = `
+      <div class="body-header">
+        <span class="body-dot" style="background:${col}"></span>
+        Body ${i}
+      </div>
+      <div class="body-grid">
+        <label><span>x</span><input type="number" data-field="x"  value="${fmt(b.x)}"  step="0.1"></label>
+        <label><span>vx</span><input type="number" data-field="vx" value="${fmt(b.vx)}" step="0.01"></label>
+        <label><span>y</span><input type="number" data-field="y"  value="${fmt(b.y)}"  step="0.1"></label>
+        <label><span>vy</span><input type="number" data-field="vy" value="${fmt(b.vy)}" step="0.01"></label>
+      </div>`;
+    container.appendChild(div);
+  }
+
+  // Velocity hint
+  const r  = Math.hypot(bodies[0].x, bodies[0].y) || 2;
+  const vc = orbitalV(n, r).toFixed(3);
+  const ve = (Math.sqrt(2) * parseFloat(vc)).toFixed(3);
+  document.getElementById('velHint').innerHTML =
+    `v<sub>circ</sub> ≈ ${vc} &nbsp;·&nbsp; v<sub>esc</sub> ≈ ${ve}`;
+}
+
+// ── Read current body state from inputs ───────────────────────────────────────
+function readBodies() {
+  return Array.from(document.querySelectorAll('.body-panel')).map(panel => {
+    const get = f => parseFloat(panel.querySelector(`[data-field="${f}"]`).value) || 0;
+    return { x: get('x'), y: get('y'), vx: get('vx'), vy: get('vy') };
   });
+}
 
-  const PRESETS = {
-    circular:   { r:2.0, vx:0,     vy:0.500 },
-    elliptical: { r:2.0, vx:0,     vy:0.350 },
-    escape:     { r:2.0, vx:0,     vy:1.100 },
-    figure8:    { r:2.0, vx:0.466, vy:0.432 },
-  };
-  document.querySelectorAll('.preset').forEach(btn => {
+// ── Apply + play ──────────────────────────────────────────────────────────────
+function applyAndPlay() {
+  const bodies = readBodies();
+  const pos    = bodies.map(b => [b.x,  b.y ]);
+  const vel    = bodies.map(b => [b.vx, b.vy]);
+  const maxR   = Math.max(...bodies.map(b => Math.hypot(b.x, b.y)), 1);
+  sim.scale = Math.min(220, 180 / maxR);
+  sim._initialScale = sim.scale;
+  sim.stop();
+  sim.reset(pos, vel);
+  sim.start();
+  btnPlay.textContent = '⏸ Pause';
+}
+
+// ── N change ──────────────────────────────────────────────────────────────────
+let N = 2;
+function setN(n) {
+  N = Math.max(2, Math.min(20, n));
+  document.getElementById('nDisplay').textContent = N;
+  buildControls(N);
+  buildPresets(N);
+  applyAndPlay();
+}
+
+document.getElementById('btnNDec').addEventListener('click', () => setN(N - 1));
+document.getElementById('btnNInc').addEventListener('click', () => setN(N + 1));
+
+// ── Play / Reset ──────────────────────────────────────────────────────────────
+btnPlay.addEventListener('click', () => {
+  if (sim.running) { sim.stop();  btnPlay.textContent = '▶ Play'; }
+  else             { sim.start(); btnPlay.textContent = '⏸ Pause'; }
+});
+document.getElementById('btnReset').addEventListener('click', applyAndPlay);
+
+// ── Presets ───────────────────────────────────────────────────────────────────
+const PRESETS_BY_N = {
+  _any: [
+    { label: 'Symmetric',
+      fn: n => symmetricBodies(n, 2.0) },
+    { label: 'Compact',
+      fn: n => symmetricBodies(n, 1.0) },
+    { label: 'Spread',
+      fn: n => symmetricBodies(n, 4.0) },
+  ],
+  2: [
+    { label: 'Circular',
+      fn: () => [{ x:-1, y:0, vx:0, vy:-0.5 }, { x:1, y:0, vx:0, vy:0.5 }] },
+    { label: 'Elliptical',
+      fn: () => [{ x:-1, y:0, vx:0, vy:-0.35 }, { x:1, y:0, vx:0, vy:0.35 }] },
+    { label: 'Escape',
+      fn: () => [{ x:-1, y:0, vx:0, vy:-1.1 }, { x:1, y:0, vx:0, vy:1.1 }] },
+    { label: 'Figure-8',
+      fn: () => [{ x:-1, y:0, vx:0.466, vy:0.432 }, { x:1, y:0, vx:0.466, vy:0.432 }] },
+  ],
+  3: [
+    { label: 'Figure-8',
+      fn: () => [
+        { x:-0.97000436, y: 0.24308753, vx: 0.46620369, vy: 0.43236573 },
+        { x: 0.97000436, y:-0.24308753, vx: 0.46620369, vy: 0.43236573 },
+        { x: 0,          y: 0,          vx:-0.93240737, vy:-0.86473146 },
+      ]},
+    { label: 'Lagrange',
+      fn: () => {
+        const r = 2, v = orbitalV(3, r);
+        const a0 = -Math.PI/2, a1 = a0 + 2*Math.PI/3, a2 = a1 + 2*Math.PI/3;
+        return [a0, a1, a2].map(a => ({
+          x: r*Math.cos(a), y: r*Math.sin(a),
+          vx: -v*Math.sin(a), vy: v*Math.cos(a),
+        }));
+      }},
+  ],
+  4: [
+    { label: 'Square',
+      fn: () => {
+        const r = 2, v = orbitalV(4, r);
+        return [0,1,2,3].map(i => {
+          const a = Math.PI/4 + i*Math.PI/2;
+          return { x: r*Math.cos(a), y: r*Math.sin(a),
+                   vx: -v*Math.sin(a), vy: v*Math.cos(a) };
+        });
+      }},
+  ],
+};
+
+function buildPresets(n) {
+  const row = document.getElementById('presetRow');
+  row.innerHTML = '';
+  const groups = [...(PRESETS_BY_N._any || []), ...(PRESETS_BY_N[n] || [])];
+  groups.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-secondary preset';
+    btn.textContent = p.label;
     btn.addEventListener('click', () => {
-      const p = PRESETS[btn.dataset.preset];
-      rSlider.value = p.r; vxSlider.value = p.vx; vySlider.value = p.vy;
-      updateLabels();
+      buildControls(n, p.fn(n));
       applyAndPlay();
     });
+    row.appendChild(btn);
   });
+}
 
-  updateLabels();
-  applyAndPlay();
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(v) { return (Math.round(v * 1000) / 1000).toFixed(3); }
 
-  window.addEventListener('chaosSettingsChanged', () => {
-    if (!sim.running) sim._draw();
-  });
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildControls(2);
+buildPresets(2);
+applyAndPlay();
+
+window.addEventListener('chaosSettingsChanged', () => {
+  if (!sim.running) sim._draw();
+});
 </script>
 </body>
 </html>
